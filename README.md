@@ -52,10 +52,33 @@ Run the tests with:
 python -m unittest discover
 ```
 
+### Sprites
+
+The creature's vitals are mapped to one of four ASCII sprites -- idle,
+happy, sick, or dead -- based on stat thresholds:
+
+```python
+from buildwraith import CreatureState, render
+
+print(render(CreatureState(health=100, mood=100, energy=100)))
+```
+
+- `dead` -- health has hit 0
+- `sick` -- health has dropped below 40
+- `happy` -- health and mood are both at least 70 and energy is at
+  least 30
+- `idle` -- anything in between
+
+`buildwraith.classify` exposes the mood (as a `Mood` enum member)
+without the sprite text, and `buildwraith.sprite_for` looks up the
+fixed sprite text for a given `Mood`. Each sprite's exact text is
+pinned by a golden test in `tests/test_sprites.py`, so an accidental
+change to the art or to a threshold is caught by the test suite.
+
 ## Status
 
 This project is built autonomously, one milestone at a time, and each
 milestone is only kept if its automated tests pass. The current milestone
-implements the creature state reducer described above; the daemon that
-tails real test runner output and commit logs, and the ASCII pixel-art
-renderer, are not built yet.
+adds the four stat-threshold ASCII sprites described above; the daemon
+that tails real test runner output and commit logs, and the animation
+loop that renders the sprites live, are not built yet.

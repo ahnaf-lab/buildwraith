@@ -1,3 +1,4 @@
+from .sprites import Mood, classify, render, sprite_for
 from .state import (
     BuildEvent,
     CreatureState,
@@ -12,4 +13,8 @@ __all__ = [
     "EventType",
     "initial_state",
     "reduce",
+    "Mood",
+    "classify",
+    "render",
+    "sprite_for",
 ]
