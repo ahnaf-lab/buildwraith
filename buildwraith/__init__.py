@@ -1,4 +1,4 @@
-from .sprites import Mood, classify, render, sprite_for
+from .sprites import Mood, animated_sprite_for, classify, render, render_animated, sprite_for
 from .state import (
     BuildEvent,
     CreatureState,
@@ -7,6 +7,7 @@ from .state import (
     reduce,
 )
 from .tailer import FileTailer, GitCommitTailer, classify_test_line, poll_events
+from .ui import is_poll_tick, render_bar, render_frame, ticks_per_poll
 
 __all__ = [
     "BuildEvent",
@@ -18,8 +19,14 @@ __all__ = [
     "classify",
     "render",
     "sprite_for",
+    "animated_sprite_for",
+    "render_animated",
     "FileTailer",
     "GitCommitTailer",
     "classify_test_line",
     "poll_events",
+    "render_bar",
+    "render_frame",
+    "ticks_per_poll",
+    "is_poll_tick",
 ]

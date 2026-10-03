@@ -99,3 +99,67 @@ def sprite_for(mood: Mood) -> str:
 def render(state: CreatureState) -> str:
     """Return the exact ASCII sprite text for a creature's current vitals."""
     return sprite_for(classify(state))
+
+
+# Each mood has a short cycle of frames for idle animation between real
+# build events -- a blink or a breath -- so the creature looks alive even
+# when nothing new has happened. Frame 0 is always the same text as
+# `SPRITES[mood]`; a dead creature does not move, so both of its frames
+# are identical.
+ANIMATION_FRAMES = {
+    Mood.IDLE: [
+        SPRITES[Mood.IDLE],
+        _frame(
+            [
+                " ___ ",
+                "(-_-)",
+                "(   )",
+                "/| |\\",
+                " \" \" ",
+            ]
+        ),
+    ],
+    Mood.HAPPY: [
+        SPRITES[Mood.HAPPY],
+        _frame(
+            [
+                " ___ ",
+                "(-_-)",
+                "( w )",
+                "/| |\\",
+                " \" \" ",
+            ]
+        ),
+    ],
+    Mood.SICK: [
+        SPRITES[Mood.SICK],
+        _frame(
+            [
+                " ___ ",
+                "(x_x)",
+                "( _ )",
+                "/| |\\",
+                " . . ",
+            ]
+        ),
+    ],
+    Mood.DEAD: [
+        SPRITES[Mood.DEAD],
+        SPRITES[Mood.DEAD],
+    ],
+}
+
+
+def animated_sprite_for(mood: Mood, tick: int) -> str:
+    """Return the animation frame for `mood` at animation tick `tick`.
+
+    Ticks cycle through the mood's frame list, so passing consecutive
+    ticks produces a repeating animation (e.g. a blink).
+    """
+    frames = ANIMATION_FRAMES[mood]
+    return frames[tick % len(frames)]
+
+
+def render_animated(state: CreatureState, tick: int) -> str:
+    """Return the animation frame text for a creature's vitals at `tick`."""
+    return animated_sprite_for(classify(state), tick)

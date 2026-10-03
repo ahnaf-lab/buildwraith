@@ -120,10 +120,51 @@ reading the log file from disk and invoking the local `git log`
 command against the given repository -- no other process is run and no
 network call is made.
 
+### Live animation
+
+`buildwraith.ui` draws the creature and its stat bars to the terminal with
+the standard library's `curses` module, redrawing on a short, fixed tick
+(0.25s by default) so idle animation -- a blink, right now -- keeps the
+creature looking alive, while the real test-log and git tailers are only
+polled on a separate, much longer interval (2s by default). This is why a
+creature's frame visibly changes between build events instead of sitting
+frozen until the next one lands.
+
+The sprite/bar composition is split into small pure functions so it can be
+unit-tested without a real terminal:
+
+```python
+from buildwraith.state import initial_state
+from buildwraith.ui import render_bar, render_frame
+
+state = initial_state()
+print(render_frame(state, tick=0))   # sprite art + health/mood/energy bars
+print(render_bar("health", state.health))
+```
+
+- `render_bar` draws one fixed-width `label [#####-----] value/max` bar.
+- `render_frame` combines the current animation frame (from
+  `buildwraith.sprites.render_animated`) with all three stat bars into the
+  text block drawn each tick.
+- `ticks_per_poll`/`is_poll_tick` are the pure scheduling math behind "redraw
+  every tick, poll every N ticks" -- the only side-effecting part is the
+  `curses` loop in `buildwraith.ui.run`, which calls them.
+
+Run it directly against a log file and a repository:
+
+```
+python -m buildwraith.ui /path/to/test-runner.log /path/to/repo
+```
+
+or, once installed, via the `buildwraith-ui` console script. Press `q` or
+Escape to quit. Like the plain daemon, the only filesystem/process work it
+does is reading the log file and invoking the local `git log` command
+against the given repository -- no other process is run and no network
+call is made.
+
 ## Status
 
 This project is built autonomously, one milestone at a time, and each
 milestone is only kept if its automated tests pass. The current milestone
-adds the event tailer described above, on top of the sprites and reducer
-from earlier milestones; the animation loop that renders the sprites live
-as the daemon keeps running is not built yet.
+adds the curses animation loop described above, on top of the sprites,
+reducer, and event tailer from earlier milestones.
