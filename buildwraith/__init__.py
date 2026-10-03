@@ -1,3 +1,4 @@
+from .replay import ReplayStep, classify_log_line, replay_file, replay_lines
 from .sprites import Mood, animated_sprite_for, classify, render, render_animated, sprite_for
 from .state import (
     BuildEvent,
@@ -29,4 +30,8 @@ __all__ = [
     "render_frame",
     "ticks_per_poll",
     "is_poll_tick",
+    "ReplayStep",
+    "classify_log_line",
+    "replay_lines",
+    "replay_file",
 ]

@@ -109,16 +109,65 @@ events = poll_events(test_tailer, commit_tailer)
 Run the daemon directly against a log file and a repository:
 
 ```
-python -m buildwraith.daemon /path/to/test-runner.log /path/to/repo
+python -m buildwraith.daemon run /path/to/test-runner.log /path/to/repo
 ```
 
-or, once installed, via the `buildwraith` console script. It polls on
-an interval (`--interval`, default 2 seconds), feeds whatever events it
-finds into the reducer, and prints the creature's sprite and vitals
-after each poll. The only network- or process-adjacent work it does is
-reading the log file from disk and invoking the local `git log`
+or, once installed, via the `buildwraith` console script (`buildwraith run
+...`). It polls on an interval (`--interval`, default 2 seconds), feeds
+whatever events it finds into the reducer, and prints the creature's sprite
+and vitals after each poll. The only network- or process-adjacent work it
+does is reading the log file from disk and invoking the local `git log`
 command against the given repository -- no other process is run and no
 network call is made.
+
+### Batch replay
+
+`buildwraith feed <ci-log>` is the demo/test-facing counterpart to `run`:
+instead of polling a live log and repository on a timer forever, it reads
+one already-finished CI log in a single pass and deterministically
+reconstructs the whole history of creature states it would have produced:
+
+```
+python -m buildwraith.daemon feed /path/to/recorded-ci.log
+```
+
+or, once installed, via `buildwraith feed /path/to/recorded-ci.log`. Each
+line of the log is classified exactly like the live daemon classifies test
+output (`classify_test_line`'s pass/fail markers), plus plain `git log`
+commit headers (`commit <40-character-hex-sha>`, with any trailing ref
+decoration such as `(HEAD -> master)` ignored) so a log that interleaves a
+checkout's commit history with a test run's output drives both `COMMIT` and
+`TEST_PASS`/`TEST_FAIL` events. Lines that match neither are skipped. Because
+the reducer is pure and the whole log is read up front, the same log file
+always replays to the exact same sequence of states -- useful for demos that
+need a repeatable run, and for golden tests of a run's full history rather
+than just a single step.
+
+By default every recognized step is printed immediately, back to back;
+`--interval` adds a pause (in seconds) between steps purely for pacing a
+live demo -- it has no effect on the reconstructed states themselves:
+
+```
+python -m buildwraith.daemon feed /path/to/recorded-ci.log --interval 0.5
+```
+
+The pure replay logic is in `buildwraith.replay` and can be used without
+going through the CLI at all:
+
+```python
+from buildwraith.replay import replay_file, replay_lines
+
+steps = replay_file("/path/to/recorded-ci.log")
+for step in steps:
+    print(step.event, step.state)
+```
+
+- `classify_log_line` classifies one log line as a `BuildEvent` type, or
+  `None`.
+- `replay_lines` folds an iterable of lines through the reducer, returning a
+  `ReplayStep` (the event plus the resulting `CreatureState`) for every
+  recognized line, starting fresh from `initial_state()` every call.
+- `replay_file` is `replay_lines` over a file on disk.
 
 ### Live animation
 
@@ -166,5 +215,6 @@ call is made.
 
 This project is built autonomously, one milestone at a time, and each
 milestone is only kept if its automated tests pass. The current milestone
-adds the curses animation loop described above, on top of the sprites,
-reducer, and event tailer from earlier milestones.
+adds the `buildwraith feed` batch replay mode described above, on top of the
+sprites, reducer, event tailer, and curses animation loop from earlier
+milestones.
