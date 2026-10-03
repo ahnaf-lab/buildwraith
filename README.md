@@ -75,10 +75,55 @@ fixed sprite text for a given `Mood`. Each sprite's exact text is
 pinned by a golden test in `tests/test_sprites.py`, so an accidental
 change to the art or to a threshold is caught by the test suite.
 
+### Event tailer
+
+The daemon turns a test runner's log file and a git repository's commit
+history into the `BuildEvent`s the reducer consumes:
+
+```python
+from buildwraith import FileTailer, GitCommitTailer, poll_events
+
+test_tailer = FileTailer("/path/to/test-runner.log")
+commit_tailer = GitCommitTailer("/path/to/repo")
+
+events = poll_events(test_tailer, commit_tailer)
+```
+
+- `FileTailer` incrementally reads lines appended to a growing log
+  file. Only complete lines are returned; a line with no trailing
+  newline yet is held back until it is finished. If the file shrinks
+  (truncated or replaced, as log files sometimes are), the tailer
+  starts over from the beginning.
+- `GitCommitTailer` polls a repository's `git log` for commits made
+  since it was constructed or last polled -- commits that already
+  existed are the baseline, not events.
+- `classify_test_line` maps one line of test-runner output to
+  `TEST_PASS`/`TEST_FAIL`/`None` by checking its final
+  whitespace-separated token against the status markers used by both
+  unittest's verbose output (`... ok`, `... FAIL`, `... ERROR`) and
+  pytest's verbose output (`PASSED`, `FAILED`, `ERROR`).
+- `poll_events` runs one polling cycle across both tailers and returns
+  the `BuildEvent`s it observed, falling back to a single `IDLE` event
+  when nothing new happened.
+
+Run the daemon directly against a log file and a repository:
+
+```
+python -m buildwraith.daemon /path/to/test-runner.log /path/to/repo
+```
+
+or, once installed, via the `buildwraith` console script. It polls on
+an interval (`--interval`, default 2 seconds), feeds whatever events it
+finds into the reducer, and prints the creature's sprite and vitals
+after each poll. The only network- or process-adjacent work it does is
+reading the log file from disk and invoking the local `git log`
+command against the given repository -- no other process is run and no
+network call is made.
+
 ## Status
 
 This project is built autonomously, one milestone at a time, and each
 milestone is only kept if its automated tests pass. The current milestone
-adds the four stat-threshold ASCII sprites described above; the daemon
-that tails real test runner output and commit logs, and the animation
-loop that renders the sprites live, are not built yet.
+adds the event tailer described above, on top of the sprites and reducer
+from earlier milestones; the animation loop that renders the sprites live
+as the daemon keeps running is not built yet.

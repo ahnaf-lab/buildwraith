@@ -6,6 +6,7 @@ from .state import (
     initial_state,
     reduce,
 )
+from .tailer import FileTailer, GitCommitTailer, classify_test_line, poll_events
 
 __all__ = [
     "BuildEvent",
@@ -17,4 +18,8 @@ __all__ = [
     "classify",
     "render",
     "sprite_for",
+    "FileTailer",
+    "GitCommitTailer",
+    "classify_test_line",
+    "poll_events",
 ]
